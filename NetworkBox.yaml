@@ -1,0 +1,311 @@
+
+AWSTemplateFormatVersion: 2020-01-05
+Description: >-
+  Network Template: Project2: Go green.
+  Author: Eliecer Diaz
+
+Parameters:
+  VPCCIDR:
+    Description: CIDR Block for VPC
+    Type: String
+    Default: 10.0.0.0/16
+    
+  PublicSubnet1Param:
+    Description: Public Subnet 1
+    Type: String
+    Default: 10.0.0.0/24
+    
+  PublicSubnet2Param:
+    Description: Public Subnet 2
+    Type: String
+    Default: 10.0.1.0/24
+    
+
+
+  PrivateSubnet1Param:
+    Description: Private Subnet 1
+    Type: String
+    Default: 10.0.10.0/24
+   
+
+  PrivateSubnet2Param:
+    Description: Private Subnet 2
+    Type: String
+    Default: 10.0.11.0/24
+    
+  PrivateSubnet3Param:
+    Description: Private Subnet 3
+    Type: String
+    Default: 10.0.20.0/24
+   
+
+  PrivateSubnet4Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.21.0/24
+
+  PrivateSubnet5Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.30.0/24
+
+  PrivateSubnet4Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.31.0/24
+
+  
+Mappings:
+  AWSRegionToAMI:
+    us-west-1:
+      AMI: ami-7a85a01a
+    eu-west-1:
+      AMI: ami-01ccc867
+    sa-east-1:
+      AMI: ami-37cfad5b
+    
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      Tags:
+        - Key: VPC
+          Value: Architecting on AWS
+        - Key: Name
+          Value: Lab VPC
+    
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    DependsOn: VPC
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    DependsOn:
+      - VPC
+      - InternetGateway
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+#Public subnets:
+
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1Param
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1
+    
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public Route Table
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - VPC
+      - PublicRouteTable
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+  
+  # Public subnet RouteTable associations
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnet1
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+  
+  PublicSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnet2
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+
+
+######################
+#Private subnets
+#######################
+
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1Param
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private Subnet 1
+ 
+  #PrivateRoute tables  
+  PrivateRouteTable1:
+    Type: 'AWS::EC2::RouteTable'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table 1
+  
+  PrivateRoute1:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - VPC
+      - PrivateRouteTable
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PrivateRouteTable
+      - PrivateSubnet1
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+  NATGateway:
+    DependsOn: AttachGateway
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - AllocationId
+      SubnetId: !Ref PublicSubnet1
+    
+####
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet2Param
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private Subnet 2
+ 
+  #PrivateRoute tables  
+  PrivateRouteTable2:
+    Type: 'AWS::EC2::RouteTable'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table 2
+  
+  PrivateRoute2:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - VPC
+      - PrivateRouteTable
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PrivateRouteTable
+      - PrivateSubnet1
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+  NATGateway:
+    DependsOn: AttachGateway
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - AllocationId
+      SubnetId: !Ref PublicSubnet2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  WebServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the web servers
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Web Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+    M
+  ConfigServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+    

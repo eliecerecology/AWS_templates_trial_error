@@ -1,0 +1,314 @@
+AWSTemplateFormatVersion: 2020-01-05
+Description: 'Network Template: Project2: Go green. Author: Eliecer Diaz'
+
+Mappings:
+  AWSRegionToAMI:
+    sa-east-1:
+      AMI: ami-37cfad5b
+
+
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: 10.0.0.0/16
+      AvailabilityZone: sa-east1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 36162eb6-2044-4b8f-9041-f8c704fba573
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: efcb1fa6-57ce-4313-8605-30b888b31063
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+    
+  # Route tables:
+
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+    
+  
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    
+  
+  PrivateRouteTable1:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+    
+  PrivateRoute1:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+  
+  PrivateRouteTable2:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+    
+  PrivateRoute2:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PrivateRouteTable3:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+    
+  PrivateRoute3:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+
+  #NAT Gateway for Public subnet 1
+  NATGateway:
+    DependsOn: AttachGateway
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - EIP
+        - AllocationId
+      SubnetId: !Ref PublicSubnet1
+  
+  
+  # Subnets
+  # Public 1
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: sa-east1a
+
+  
+
+      
+  PublicSubnetRouteTableAssociation1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+    
+  PublicSubnetNetworkAclAssociation1:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet 1
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+
+  # Public 2
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: sa-east1b
+    
+  PublicSubnetRouteTableAssociation2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+    
+  PublicSubnetNetworkAclAssociation2:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet 2
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+  
+  # Private 1
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+    
+  PrivateSubnetRouteTableAssociation1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+  
+  PrivateSubnetNetworkAclAssociation1:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 1
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+  
+  #Private 2
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+    
+  PrivateSubnetRouteTableAssociation2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet2
+      RouteTableId: !Ref PublicRouteTable2
+
+  PrivateSubnetNetworkAclAssociation2:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 2
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+
+  # Private 1
+  PrivateSubnet3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.20.0/24
+    
+  PrivateSubnetRouteTableAssociation3:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+  
+  PrivateSubnetNetworkAclAssociation3:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 3
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+  
+  #Private 4
+  PrivateSubnet4:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.21.0/24
+    
+  PrivateSubnetRouteTableAssociation4:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet4
+      RouteTableId: !Ref PublicRouteTable4
+
+  PrivateSubnetNetworkAclAssociation4:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 4
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+
+  ConfigServerSG1:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+  
+  # WEB TIER
+  WebServer1:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - VPC
+    Properties:
+      ImageId: !FindInMap 
+        - AWSRegionToAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      KeyName: !Ref KeyName
+      InstanceType: m4.xlarge
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: 'true'
+          GroupSet:
+            - !Ref ConfigServerSG1
+        - SubnetId: !Ref PrivateSubnet1
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: Name
+          Value: Configuration Server 1
+
+  ConfigServerSG2:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+  
+  WebServer2:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - VPC
+    Properties:
+      ImageId: !FindInMap 
+        - AWSRegionToAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      KeyName: !Ref KeyName
+      InstanceType: m4.xlarge
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: 'true'
+          GroupSet:
+            - !Ref ConfigServerSG2
+        - SubnetId: !Ref PrivateSubnet2
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: Name
+          Value: Configuration Server 2
+
+  

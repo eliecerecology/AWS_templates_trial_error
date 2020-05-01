@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: 2020-01-05
+Description: >-
+  Network Template: Project2: Go green.
+  Author: Eliecer Diaz
+
+
+Parameters:
+  VPCCIDR:
+    Description: CIDR Block for VPC
+    Type: String
+    Default: 10.0.0.0/16
+    
+  PublicSubnet1Param:
+    Description: Public Subnet 1
+    Type: String
+    Default: 10.0.0.0/24
+    
+  PublicSubnet2Param:
+    Description: Public Subnet 2
+    Type: String
+    Default: 10.0.1.0/24
+    
+
+
+  PrivateSubnet1Param:
+    Description: Private Subnet 1
+    Type: String
+    Default: 10.0.10.0/24
+   
+
+  PrivateSubnet2Param:
+    Description: Private Subnet 2
+    Type: String
+    Default: 10.0.11.0/24
+    
+  PrivateSubnet3Param:
+    Description: Private Subnet 3
+    Type: String
+    Default: 10.0.20.0/24
+   
+
+  PrivateSubnet4Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.21.0/24
+
+  PrivateSubnet5Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.30.0/24
+
+  PrivateSubnet4Param:
+    Description: Private Subnet 4
+    Type: String
+    Default: 10.0.31.0/24

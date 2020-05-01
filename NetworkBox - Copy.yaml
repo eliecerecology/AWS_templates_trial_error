@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'ACA Module 3 LAB: Making your Environment Highly Available'
+Parameters:
+  VPCCIDR:
+    Description: CIDR Block for VPC
+    Type: String
+    Default: 10.200.0.0/20
+    AllowedValues:
+      - 10.200.0.0/20
+  PublicSubnet1Param:
+    Description: Public Subnet 1
+    Type: String
+    Default: 10.200.0.0/24
+    AllowedValues:
+      - 10.200.0.0/24
+  PrivateSubnet1Param:
+    Description: Private Subnet 1
+    Type: String
+    Default: 10.200.2.0/23
+    AllowedValues:
+      - 10.200.2.0/23
+  KeyName:
+    Type: String
+    Description: Keyname for the keypair that Qwiklab will use
+  RoleName:
+    Description: Enter the service linked role name.
+    Type: String
+    Default: AWSServiceRoleForAutoScaling
+  ServiceName:
+    Description: Choose a service to create a service linked role.
+    Type: String
+    Default: autoscaling.amazonaws.com
+    AllowedValues:
+      - ec2.amazonaws.com
+      - ec2.application-autoscaling.amazonaws.com
+      - autoscaling.amazonaws.com
+      - application-autoscaling.amazonaws.com
+      - elasticloadbalancing.amazonaws.com
+      - cloudformation.amazonaws.com
+      - cloudfront.amazonaws.com
+      - rds.amazonaws.com
+    ConstraintDescription: >-
+      Must be a service that supports supports service linked roles
+      https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-services-that-work-with-iam.html.
+Mappings:
+  AWSRegionToAMI:
+    sa-east-1:
+      AMI: ami-37cfad5b
+  
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      Tags:
+        - Key: VPC
+          Value: Architecting on AWS
+        - Key: Name
+          Value: Lab VPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d9a4afab-dbae-4d24-8d82-993c178afd5c
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    DependsOn: VPC
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    DependsOn:
+      - VPC
+      - InternetGateway
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1Param
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2c8b9465-164b-4f13-99a2-167b6a29cb0e
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public Route Table
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d106483c-5971-4b4c-a412-341d608da1e5
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - VPC
+      - PublicRouteTable
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e46e7383-a50c-4b3c-ad71-e2ddbd928115
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnet1
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1Param
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private Subnet 1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 243d179e-89da-470e-a727-559b97cf6d21
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    DependsOn:
+      - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table 1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c00de772-a648-4797-b8b9-6d838eba24f8
+  PrivateRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - VPC
+      - PrivateRouteTable
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 41575449-65ba-4e19-ba28-4f80aed393e7
+  PrivateSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    DependsOn:
+      - PrivateRouteTable
+      - PrivateSubnet1
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+  NATGateway:
+    DependsOn: AttachGateway
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - EIP
+        - AllocationId
+      SubnetId: !Ref PublicSubnet1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: bc917f2c-226b-477e-9a69-8f87110525da
+  WebServer:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - VPC
+    Properties:
+      ImageId: !FindInMap 
+        - AWSRegionToAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: 'true'
+          GroupSet:
+            - !Ref ConfigServerSG
+        - SubnetId: !Ref PublicSubnet1
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: Name
+          Value: Configuration Server
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ec564a0f-0e3c-4c00-89bb-2f35422d2429
+  WebServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the web servers
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Web Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2092e615-d81c-4977-aac5-476e2cdf5de8
+  ConfigServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3a27dd13-61c1-4303-b783-c0cc1a1e3c06
+  
