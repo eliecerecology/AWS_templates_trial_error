@@ -20,9 +20,7 @@ Resources:
         id: 36162eb6-2044-4b8f-9041-f8c704fba573
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: efcb1fa6-57ce-4313-8605-30b888b31063
+    
   VPCGatewayAttachment:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
@@ -97,7 +95,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.0.0/24
-      AvailabilityZone: sa-east1a
+      #AvailabilityZone: sa-east1a
 
   
 
@@ -225,7 +223,7 @@ Resources:
   ConfigServerSG1:
     Type: 'AWS::EC2::SecurityGroup'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
       GroupDescription: Security group for the configuration server
       VpcId: !Ref VPC
@@ -248,7 +246,7 @@ Resources:
   WebServer1:
     Type: 'AWS::EC2::Instance'
     DependsOn: 
-      - VPC
+      - !Ref VPC
     Properties:
       ImageId: !FindInMap 
         - AWSRegionToAMI
@@ -270,7 +268,7 @@ Resources:
   ConfigServerSG2:
     Type: 'AWS::EC2::SecurityGroup'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
       GroupDescription: Security group for the configuration server
       VpcId: !Ref VPC
@@ -292,7 +290,7 @@ Resources:
   WebServer2:
     Type: 'AWS::EC2::Instance'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
       ImageId: !FindInMap 
         - AWSRegionToAMI
@@ -315,8 +313,9 @@ Resources:
   AppServer1:
     Type: 'AWS::EC2::Instance'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
+
       ImageId: !FindInMap 
         - AWSRegionToAMI
         - !Ref 'AWS::Region'
@@ -337,7 +336,7 @@ Resources:
   ConfigAPPServerSG1:
     Type: 'AWS::EC2::SecurityGroup'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
       GroupDescription: Security group for the configuration server
       VpcId: !Ref VPC
@@ -359,21 +358,44 @@ Resources:
   AppServer2:
     Type: 'AWS::EC2::Instance'
     DependsOn:
-      - VPC
+      - !Ref VPC
     Properties:
       ImageId: !FindInMap 
         - AWSRegionToAMI
         - !Ref 'AWS::Region'
         - AMI
+
       KeyName: !Ref KeyName
-      InstanceType: m4.xlarge
+      InstanceType: t2.xlarge
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: 'true'
           GroupSet:
-            - !Ref ConfigServerSG2
+            - !Ref ConfigAPPServerSG2
         - SubnetId: !Ref PrivateSubnet2
       SourceDestCheck: 'false'
       Tags:
         - Key: Name
           Value: Configuration Server 2
+
+  ConfigAPPServerSG2:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - !Ref VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration APP Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
