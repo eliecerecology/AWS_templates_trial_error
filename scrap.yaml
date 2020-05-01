@@ -1,0 +1,161 @@
+# Private 3
+  PrivateSubnet3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.20.0/24
+    
+  PrivateSubnetRouteTableAssociation3:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet3
+      RouteTableId: !Ref PrivateRouteTable3
+  
+  PrivateSubnetNetworkAclAssociation3:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+  
+  #Private 4
+  PrivateSubnet4:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.21.0/24
+    
+  PrivateSubnetRouteTableAssociation4:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivatecSubnet4
+      RouteTableId: !Ref PrivateRouteTable
+  PrivateSubnetNetworkAclAssociation2:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet 4
+      NetworkAclId: !GetAtt 
+        - VPC
+        - DefaultNetworkAcl
+
+
+
+WebServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the web servers
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Web Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2092e615-d81c-4977-aac5-476e2cdf5de8
+  ConfigServerSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+
+
+
+# APP TIER
+  AppServer1:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - VPC
+    Properties:
+      ImageId: !FindInMap 
+        - AWSRegionToAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      KeyName: !Ref KeyName
+      InstanceType: t2.xlarge
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: 'true'
+          GroupSet:
+            - !Ref ConfigServerSG1
+        - SubnetId: !Ref PrivateSubnet1
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: Name
+          Value: Configuration Server 1
+
+  ConfigAPPServerSG1:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - VPC
+    Properties:
+      GroupDescription: Security group for the configuration server
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Configuration APP Server SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+  
+  AppServer2:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - VPC
+    Properties:
+      ImageId: !FindInMap 
+        - AWSRegionToAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      KeyName: !Ref KeyName
+      InstanceType: m4.xlarge
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: 'true'
+          GroupSet:
+            - !Ref ConfigServerSG2
+        - SubnetId: !Ref PrivateSubnet2
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: Name
+          Value: Configuration Server 2
+    
+  
