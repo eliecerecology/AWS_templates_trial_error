@@ -253,7 +253,7 @@ Resources:
         - !Ref 'AWS::Region'
         - AMI
       KeyName: !Ref KeyName
-      InstanceType: m4.xlarge
+      InstanceType: t2.micro #m4.xlarge
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: 'true'
@@ -297,7 +297,7 @@ Resources:
         - !Ref 'AWS::Region'
         - AMI
       KeyName: !Ref KeyName
-      InstanceType: m4.xlarge
+      InstanceType: t2.micro #m4.xlarge
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: 'true'
@@ -321,7 +321,7 @@ Resources:
         - !Ref 'AWS::Region'
         - AMI
       KeyName: !Ref KeyName
-      InstanceType: t2.xlarge
+      InstanceType: t2.micro #t2.xlarge
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: 'true'
@@ -366,7 +366,7 @@ Resources:
         - AMI
 
       KeyName: !Ref KeyName
-      InstanceType: t2.xlarge
+      InstanceType: t2.micro #t2.xlarge
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: 'true'

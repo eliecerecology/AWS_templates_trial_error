@@ -1,0 +1,28 @@
+NAT Public 1: nat-07d3deb3d2ee00b44
+
+
+sudo yum install java-1.8.0-openjdk-devel
+sudo useradd -m -U -d /opt/tomcat -s /bin/false tomcat
+
+cd /tmp
+wget https://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.27/bin/apache-tomcat-9.0.27.tar.gz
+tar -xf apache-tomcat-9.0.27.tar.gz
+sudo mv apache-tomcat-9.0.27 /opt/tomcat/
+sudo ln -s /opt/tomcat/apache-tomcat-9.0.27 /opt/tomcat/latest
+sudo chown -R tomcat: /opt/tomcat
+sudo sh -c 'chmod +x /opt/tomcat/latest/bin/*.sh'
+
+
+sudo yum -y update
+sudo yum -y install httpd php
+sudo chkconfig httpd on
+
+
+For PHP
+wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/CUR-TF-200-ACACAD/studentdownload/phpapp.zip
+
+sudo unzip phpapp.zip -d /var/www/html/
+
+sudo service httpd start
+
+exit
